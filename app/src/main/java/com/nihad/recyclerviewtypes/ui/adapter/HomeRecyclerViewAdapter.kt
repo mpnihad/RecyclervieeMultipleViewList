@@ -1,6 +1,7 @@
 package com.nihad.recyclerviewtypes.ui.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.nihad.recyclerviewtypes.ui.HomeRecyclerViewHolder
@@ -17,6 +18,8 @@ class HomeRecyclerViewAdapter : RecyclerView.Adapter<HomeRecyclerViewHolder>() {
             field = value
             notifyDataSetChanged()
         }
+
+    var itemClickListener: ((view: View, item:HomeRecyclerViewItem, position:Int) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HomeRecyclerViewHolder {
         return when (viewType) {
@@ -55,6 +58,7 @@ class HomeRecyclerViewAdapter : RecyclerView.Adapter<HomeRecyclerViewHolder>() {
 
     override fun onBindViewHolder(holder: HomeRecyclerViewHolder, position: Int) {
 
+        holder.itemClickListener= itemClickListener
         when (holder) {
             is HomeRecyclerViewHolder.DirectorViewHolder -> holder.bind(list[position] as HomeRecyclerViewItem.Director)
             is HomeRecyclerViewHolder.MovieViewHolder -> holder.bind(list[position] as HomeRecyclerViewItem.Movie)

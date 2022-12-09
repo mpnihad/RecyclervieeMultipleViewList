@@ -1,6 +1,8 @@
 package com.nihad.recyclerviewtypes.ui
 
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,6 +28,17 @@ class MainActivity : AppCompatActivity() {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = homeAdapter
+        }
+
+        homeAdapter.itemClickListener = { view, item, position ->
+
+            var message =when( item){
+                is HomeRecyclerViewItem.Director -> "Director ${item.name}"
+                is HomeRecyclerViewItem.Movie -> "Movie ${item.title}"
+                is HomeRecyclerViewItem.Title -> "Movie ${item.title}"
+            }
+
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }
 
         viewModel.homeListItemsMediatorLiveData.observe(this){ result ->

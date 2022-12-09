@@ -1,5 +1,6 @@
 package com.nihad.recyclerviewtypes.ui
 
+import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.nihad.recyclerviewtypes.R
@@ -12,11 +13,16 @@ sealed class HomeRecyclerViewHolder(
 ) : RecyclerView.ViewHolder(binding.root) {
 
 
+    var itemClickListener: ((view: View, item:HomeRecyclerViewItem, position:Int) -> Unit)? = null
+
+
     class TitleViewHolder(private val binding: ItemTitleBinding) : HomeRecyclerViewHolder(binding) {
         fun bind(title: HomeRecyclerViewItem.Title) {
             binding.textViewTitle.text = title.title
             binding.textViewAll.setOnClickListener {
-                title.callBack()
+//                title.callBack()
+
+                itemClickListener?.invoke(it, title,adapterPosition)
             }
         }
     }
@@ -27,6 +33,10 @@ sealed class HomeRecyclerViewHolder(
 
             movie.thumbnail?.let { thumbnail ->
                 binding.imageViewMovie.loadImage(thumbnail)
+            }
+
+            binding.root.setOnClickListener{
+                itemClickListener?.invoke(it, movie,adapterPosition)
             }
 
         }
@@ -42,6 +52,9 @@ sealed class HomeRecyclerViewHolder(
             binding.textViewName.text = director.name
             binding.textViewMovies.text = binding.textViewMovies.context.getString(R.string.total_movies,director.movie_count)
 
+            binding.root.setOnClickListener{
+                itemClickListener?.invoke(it, director,adapterPosition)
+            }
         }
     }
 
