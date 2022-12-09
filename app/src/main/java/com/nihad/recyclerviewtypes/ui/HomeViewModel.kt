@@ -1,11 +1,7 @@
 package com.nihad.recyclerviewtypes.ui
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.nihad.recyclerviewtypes.data.network.Resource
 import com.nihad.recyclerviewtypes.data.repository.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,44 +14,28 @@ class HomeViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
-        private val _homeListItemsLiveData = MutableLiveData<Resource<List<HomeRecyclerViewItem>>>()
-    private val _movieLiveData = MutableLiveData<Resource<List<HomeRecyclerViewItem.Movie>>>()
-    private val _directorLiveData = MutableLiveData<Resource<List<HomeRecyclerViewItem.Director>>>()
-    val homeListItemsLiveData: LiveData<Resource<List<HomeRecyclerViewItem>>>
-        get() = _homeListItemsLiveData
+    //         var homeListItemsLiveData = MutableLiveData<Resource<List<HomeRecyclerViewItem>>>()
+    lateinit var _movieLiveData: LiveData<Resource<List<HomeRecyclerViewItem.Movie>>>
+    lateinit var _directorLiveData: LiveData<Resource<List<HomeRecyclerViewItem.Director>>>
 
-    private var _mediatorLiveData = MediatorLiveData<Resource<MutableList<HomeRecyclerViewItem>>>()
-    val mediatorLiveData: MediatorLiveData<Resource<MutableList<HomeRecyclerViewItem>>>
-        get() = _mediatorLiveData
+    val homeListItemsMediatorLiveData = MediatorLiveData<Resource<List<HomeRecyclerViewItem>>>()
+
 
     init {
         getHomeListItems()
-
-        _mediatorLiveData.addSource(
-            _movieLiveData
-        )
-        { movies ->
-
-            combineDetails(movies, _directorLiveData.value)
-
-
-
-        }
-
-        _mediatorLiveData.addSource(_directorLiveData) {director ->
-            combineDetails(_movieLiveData.value, director)
-
-
-        }
     }
 
-    private fun combineDetails(
-        movies: Resource<List<HomeRecyclerViewItem.Movie>>?,
-        director: Resource<List<HomeRecyclerViewItem.Director>>?
-    ) {
 
+
+    private fun combineDetails(
+        moviesLivedata: LiveData<Resource<List<HomeRecyclerViewItem.Movie>>>?,
+        directorLivedata: LiveData<Resource<List<HomeRecyclerViewItem.Director>>>?
+    ): Resource<List<HomeRecyclerViewItem>> {
+
+        val movies = moviesLivedata?.value
+        val director = directorLivedata?.value
         if (movies == null || director == null) {
-            return
+            return Resource.Loading
         } else {
 
             val homeItemList = mutableListOf<HomeRecyclerViewItem>()
@@ -70,15 +50,14 @@ class HomeViewModel @Inject constructor(
 
                 })
                 homeItemList.addAll(director.value)
-                _homeListItemsLiveData.postValue(Resource.Success(homeItemList))
+                return Resource.Success(homeItemList)
             } else {
-                _homeListItemsLiveData.postValue(
-                    Resource.Failure(
-                        isNetworkError = true,
-                        errorCode = 404,
-                        errorBody = null
-                    )
+                return Resource.Failure(
+                    isNetworkError = true,
+                    errorCode = 404,
+                    errorBody = null
                 )
+
             }
 
         }
@@ -86,8 +65,9 @@ class HomeViewModel @Inject constructor(
 
 
     private fun getHomeListItems() = viewModelScope.launch {
+        homeListItemsMediatorLiveData.value = (Resource.Loading)
 
-        _homeListItemsLiveData.postValue(Resource.Loading)
+
         val moviesDiffered = async {
             repository.getMovies()
         }
@@ -96,8 +76,22 @@ class HomeViewModel @Inject constructor(
             repository.getDirectors()
         }
 
-        _movieLiveData.postValue(moviesDiffered.await())
-        _directorLiveData.postValue(directorDiffered.await())
+
+        //Usually get the live data from Repository / Other source
+        _movieLiveData = MutableLiveData(moviesDiffered.await())
+        _directorLiveData = MutableLiveData(directorDiffered.await())
+
+
+
+
+
+
+        homeListItemsMediatorLiveData.addSource(_movieLiveData) { value ->
+            homeListItemsMediatorLiveData.value = combineDetails(_movieLiveData, _directorLiveData)
+        }
+        homeListItemsMediatorLiveData.addSource(_directorLiveData) { value ->
+            homeListItemsMediatorLiveData.value = combineDetails(_movieLiveData, _directorLiveData)
+        }
 
 
     }

@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
             adapter = homeAdapter
         }
 
-        viewModel.homeListItemsLiveData.observe(this){ result ->
+        viewModel.homeListItemsMediatorLiveData.observe(this){ result ->
             when  (result){
                 is Resource.Failure -> {
 
